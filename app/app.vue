@@ -1,6 +1,6 @@
 <template>
-  <div>
+  <UApp>
     <NuxtRouteAnnouncer />
-    <NuxtWelcome />
-  </div>
+    <UButton>Button</UButton>
+  </UApp>
 </template>
