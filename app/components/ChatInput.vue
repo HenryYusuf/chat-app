@@ -1,63 +1,63 @@
 <script setup lang="ts">
-// Define props for the component.
-// isStreaming: A boolean indicating if the AI is currently generating a response.
-// We destructure it with a default value of false.
+// Mendefinisikan props untuk komponen.
+// isStreaming: Boolean yang menunjukkan apakah AI sedang membuat respons.
+// Kita mendestrukturisasinya dengan nilai default false.
 const { isStreaming = false } = defineProps<{
   isStreaming?: boolean;
 }>();
 
-// Define events that this component can emit to its parent.
-// 'send-message': Emitted when the user sends a message, carrying the message string.
+// Mendefinisikan event yang dapat dipancarkan komponen ini ke induknya.
+// 'send-message': Dipancarkan saat pengguna mengirim pesan, membawa string pesan.
 const emit = defineEmits<{
   (e: "send-message", message: string): void;
 }>();
 
-// Create a reference to the textarea DOM element using useTemplateRef.
-// This matches the ref="textareaRef" attribute in the template.
+// Membuat referensi ke elemen DOM textarea menggunakan useTemplateRef.
+// Ini cocok dengan atribut ref="textareaRef" di template.
 const textareaRef = useTemplateRef("textareaRef");
 
-// Reactive state for the new message input.
+// State reaktif untuk input pesan baru.
 const newMessage = ref("");
 
-// Function to handle sending the message.
+// Fungsi untuk menangani pengiriman pesan.
 const handleSendMessage = () => {
-  // Prevent sending if the message is empty (whitespace only) or if currently streaming.
+  // Mencegah pengiriman jika pesan kosong (hanya spasi) atau jika sedang streaming.
   if (!newMessage.value.trim() || isStreaming) return;
 
-  // Emit the 'send-message' event with the trimmed message content.
+  // Memancarkan event 'send-message' dengan konten pesan yang sudah dipangkas (trim).
   emit("send-message", newMessage.value.trim());
 
-  // Clear the input field.
+  // Membersihkan kolom input.
   newMessage.value = "";
 
-  // Use nextTick to wait for the DOM to update after clearing the value.
+  // Menggunakan nextTick untuk menunggu DOM diperbarui setelah membersihkan nilai.
   nextTick(() => {
-    // Reset the textarea height to its base size.
+    // Mengatur ulang tinggi textarea ke ukuran dasarnya.
     adjustTextareaHeight();
-    // Keep focus on the textarea for better UX.
+    // Menjaga fokus pada textarea untuk UX yang lebih baik.
     textareaRef.value?.focus();
   });
 };
 
-// Function to auto-resize the textarea based on its content.
+// Fungsi untuk mengubah ukuran textarea secara otomatis berdasarkan kontennya.
 const adjustTextareaHeight = async (): Promise<void> => {
   if (textareaRef.value) {
-    // First reset height to auto to correctly calculate the new scrollHeight (shrink if needed).
+    // Pertama atur ulang tinggi ke auto untuk menghitung scrollHeight baru dengan benar (menyusut jika diperlukan).
     textareaRef.value.style.height = "auto";
-    // Wait for the DOM update.
+    // Tunggu pembaruan DOM.
     await nextTick();
-    // Set the height to the scrollHeight (the full height of the content).
+    // Atur tinggi ke scrollHeight (tinggi penuh konten).
     textareaRef.value.style.height = `${textareaRef.value.scrollHeight}px`;
   }
 };
 
-// When the component is mounted, automatically focus the textarea.
+// Saat komponen dipasang (mounted), fokuskan textarea secara otomatis.
 onMounted(() => {
   textareaRef.value?.focus();
 });
 
-// Watch the 'isStreaming' prop.
-// When streaming finishes (value becomes false), re-focus the textarea.
+// Pantau prop 'isStreaming'.
+// Saat streaming selesai (nilai menjadi false), fokuskan kembali textarea.
 watch(
   () => isStreaming,
   async (value: boolean) => {
@@ -70,15 +70,15 @@ watch(
 </script>
 
 <template>
-  <!-- Form wrapper for the input area.
-       @submit.prevent prevents the default form submission (page reload) and calls handleSendMessage. -->
+  <!-- Pembungkus formulir untuk area input.
+       @submit.prevent mencegah pengiriman formulir default (muat ulang halaman) dan memanggil handleSendMessage. -->
   <form class="message-form-wrapper" @submit.prevent="handleSendMessage">
-    <!-- Textarea for multi-line input.
-         ref="textareaRef": Connects to the script's textareaRef.
-         v-model="newMessage": Two-way binding with the newMessage state.
-         :disabled="isStreaming": Disables input while AI is generating.
-         @input="adjustTextareaHeight": Adjusts height whenever the user types.
-         @keydown.enter.prevent="handleSendMessage": Sends message on Enter key (preventing default newline). -->
+    <!-- Textarea untuk input multi-baris.
+         ref="textareaRef": Terhubung ke textareaRef di script.
+         v-model="newMessage": Binding dua arah dengan state newMessage.
+         :disabled="isStreaming": Menonaktifkan input saat AI sedang membuat respons.
+         @input="adjustTextareaHeight": Menyesuaikan tinggi setiap kali pengguna mengetik.
+         @keydown.enter.prevent="handleSendMessage": Mengirim pesan pada tombol Enter (mencegah baris baru default). -->
     <textarea
       ref="textareaRef"
       v-model="newMessage"
@@ -88,9 +88,9 @@ watch(
       @input="adjustTextareaHeight"
       @keydown.enter.prevent="handleSendMessage"
     />
-    <!-- Send button.
-         :disabled: Disabled if message is empty or currently streaming.
-         icon: Uses an icon from the heroicons set. -->
+    <!-- Tombol kirim.
+         :disabled: Dinonaktifkan jika pesan kosong atau sedang streaming.
+         icon: Menggunakan ikon dari set heroicons. -->
     <UButton
       type="submit"
       :disabled="!newMessage || isStreaming"
@@ -104,7 +104,7 @@ watch(
 </template>
 
 <style scoped>
-/* Wrapper for the input form, providing the rounded border and layout */
+/* Pembungkus untuk formulir input, memberikan border bulat dan tata letak */
 .message-form-wrapper {
   position: relative;
   display: flex;
@@ -118,36 +118,36 @@ watch(
   background-color: var(--ui-bg);
 }
 
-/* Prevent transform effects on focus/hover to keep it stable */
+/* Mencegah efek transformasi pada fokus/hover agar tetap stabil */
 .message-form-wrapper:focus-within,
 .message-form-wrapper:hover {
   transform: none;
 }
 
-/* Remove default outline and shadow on hover */
+/* Hapus outline dan shadow default saat hover */
 .message-form-wrapper:hover {
   outline: none;
   box-shadow: none;
 }
 
-/* Styling for the textarea input itself */
+/* Styling untuk input textarea itu sendiri */
 .message-input {
   width: 100%;
   padding: 0;
-  margin-right: 1.5rem; /* Space for the send button */
-  resize: none; /* Disable manual resizing */
+  margin-right: 1.5rem; /* Ruang untuk tombol kirim */
+  resize: none; /* Nonaktifkan pengubahan ukuran manual */
   background-color: transparent;
   outline: none;
 }
 
-/* Add a subtle shadow on hover for depth */
+/* Tambahkan bayangan halus saat hover untuk kedalaman */
 .message-form-wrapper:hover {
   outline: none;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
     0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
-/* Styling for disabled state */
+/* Styling untuk keadaan dinonaktifkan (disabled) */
 .message-input:disabled {
   cursor: not-allowed;
 }

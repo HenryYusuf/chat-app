@@ -1,59 +1,84 @@
 <script setup lang="ts">
-// Import the useChat composable to access chat state and logic.
-// chat: The current chat session object (contains title, id, etc.).
-// messages: An array of message objects (user and assistant).
-// sendMessage: A function to send a new message to the AI.
+// Impor composable useChat untuk mengakses state dan logika chat.
+// chat: Objek sesi chat saat ini (berisi judul, id, dll.).
+// messages: Array objek pesan (pengguna dan asisten).
+// sendMessage: Fungsi untuk mengirim pesan baru ke AI.
 const { chat, messages, sendMessage } = useChat();
 
-// Handler function for the 'send-message' event from the ChatInput component.
-// It receives the message string and calls the sendMessage composable function.
+// Impor composable useChatScroll untuk menangani perilaku scrolling.
+// showScrollButton: Ref boolean untuk mengontrol visibilitas tombol "scroll ke bawah".
+// scrollToBottom: Fungsi untuk scroll halus ke bagian bawah chat.
+// pinToBottom: Fungsi untuk menjaga chat tetap di bawah saat pesan baru masuk.
+const { showScrollButton, scrollToBottom, pinToBottom } = useChatScroll();
+
+// Fungsi handler untuk event 'send-message' dari komponen ChatInput.
+// Menerima string pesan dan memanggil fungsi composable sendMessage.
 function handleSendMessage(message: string) {
   sendMessage(message);
 }
+
+// Pantau perubahan pada array messages.
+// Saat pesan berubah (misalnya, pesan baru ditambahkan), panggil pinToBottom untuk memastikan
+// tampilan tetap pada pesan terbaru jika pengguna sudah berada di bawah.
+watch(() => messages.value, pinToBottom, { deep: true });
 </script>
 
 <template>
-  <!-- Main scrollable container for the chat interface. -->
+  <!-- Container utama yang dapat di-scroll untuk antarmuka chat. -->
   <div ref="scrollContainer" class="scroll-container">
-    <!-- UContainer provides a responsive, centered container with max-width. -->
+    <!-- UContainer menyediakan container responsif dan terpusat dengan lebar maksimal. -->
     <UContainer class="chat-container">
-      <!-- Empty State: Shown when there are no messages in the chat. -->
+      <!-- Keadaan Kosong: Ditampilkan saat tidak ada pesan dalam chat. -->
       <div v-if="!messages?.length" class="empty-state">
         <div class="empty-state-card">
           <h2 class="empty-state-title">Start your chat</h2>
-          <!-- The ChatInput component is reused here for the initial message. -->
+          <!-- Komponen ChatInput digunakan kembali di sini untuk pesan awal. -->
           <ChatInput @send-message="handleSendMessage" />
         </div>
       </div>
 
-      <!-- Chat Interface: Shown when there are messages. -->
+      <!-- Antarmuka Chat: Ditampilkan saat ada pesan. -->
       <template v-else>
-        <!-- Header displaying the chat title. -->
+        <!-- Header menampilkan judul chat. -->
         <div class="chat-header">
           <h1 class="title">
             {{ chat?.title || "Untitled Chat" }}
           </h1>
         </div>
 
-        <!-- Container for the list of messages. -->
+        <!-- Container untuk daftar pesan. -->
         <div class="messages-container">
-          <!-- Loop through each message in the messages array. -->
+          <!-- Loop melalui setiap pesan dalam array messages. -->
           <div
             v-for="message in messages"
             :key="message.id"
             class="message"
             :class="{
-              'message-user': message.role === 'user', // Apply specific style for user messages
-              'message-ai': message.role === 'assistant', // Apply specific style for AI messages
+              'message-user': message.role === 'user', // Terapkan gaya khusus untuk pesan pengguna
+              'message-ai': message.role === 'assistant', // Terapkan gaya khusus untuk pesan AI
             }"
           >
-            <!-- Display the message content. -->
+            <!-- Tampilkan konten pesan. -->
             <div class="message-content">{{ message.content }}</div>
           </div>
         </div>
 
-        <!-- Fixed input area at the bottom of the screen. -->
+        <!-- Area input tetap di bagian bawah layar. -->
         <div class="message-form-container">
+          <!-- Container untuk tombol 'scroll ke bawah'.
+               Ditempatkan secara absolut di atas area input. -->
+          <div class="scroll-to-bottom-button-container">
+            <!-- Tombol untuk scroll ke bawah.
+                 Hanya ditampilkan saat showScrollButton bernilai true (pengguna scroll ke atas). -->
+            <UButton
+              v-if="showScrollButton"
+              color="neutral"
+              variant="outline"
+              icon="i-heroicons-arrow-down"
+              class="rounded-full shadow-sm"
+              @click="() => scrollToBottom()"
+            />
+          </div>
           <ChatInput @send-message="handleSendMessage" />
         </div>
       </template>
@@ -62,21 +87,21 @@ function handleSendMessage(message: string) {
 </template>
 
 <style scoped>
-/* ===== Layout & Container Styles ===== */
-/* Ensures the main container takes full height and allows scrolling */
+/* ===== Gaya Tata Letak & Container ===== */
+/* Memastikan container utama mengambil tinggi penuh dan memungkinkan scrolling */
 .scroll-container {
   overflow-y: auto;
   height: 100%;
   box-sizing: border-box;
 }
 
-/* Constrains the width of the chat content for readability */
+/* Membatasi lebar konten chat untuk keterbacaan */
 .chat-container {
   max-width: 800px;
   height: 100%;
 }
 
-/* ===== Header Styles ===== */
+/* ===== Gaya Header ===== */
 .chat-header {
   margin-bottom: 1.5rem;
   padding: 1rem 0;
@@ -91,34 +116,34 @@ function handleSendMessage(message: string) {
   color: var(--ui-text);
 }
 
-/* ===== Messages Container ===== */
-/* Flex container for the list of messages */
+/* ===== Container Pesan ===== */
+/* Flex container untuk daftar pesan */
 .messages-container {
   display: flex;
   flex-direction: column;
-  gap: 1rem; /* Space between messages */
+  gap: 1rem; /* Jarak antar pesan */
   margin-bottom: 1.5rem;
   overflow-y: auto;
-  padding-bottom: 8rem; /* Extra padding at bottom to prevent content being hidden behind the fixed input */
+  padding-bottom: 8rem; /* Padding ekstra di bawah untuk mencegah konten tertutup di belakang input tetap */
 }
 
-/* ===== Message Styles ===== */
-/* Base style for all messages */
+/* ===== Gaya Pesan ===== */
+/* Gaya dasar untuk semua pesan */
 .message {
   padding: 1rem;
   border-radius: var(--ui-radius);
   transition: all 0.2s;
 }
 
-/* Specific styles for user messages (aligned right, distinct background) */
+/* Gaya khusus untuk pesan pengguna (rata kanan, latar belakang berbeda) */
 .message-user {
   background-color: var(--ui-bg-muted);
   border: 1px solid var(--ui-border);
-  width: 70%; /* Limit width to distinguish from full-width AI messages */
-  align-self: flex-end; /* Align to the right */
+  width: 70%; /* Batasi lebar untuk membedakan dari pesan AI lebar penuh */
+  align-self: flex-end; /* Ratakan ke kanan */
 }
 
-/* Specific styles for AI messages (full width, transparent background) */
+/* Gaya khusus untuk pesan AI (lebar penuh, latar belakang transparan) */
 .message-ai {
   width: 100%;
   padding: 1rem 0;
@@ -126,25 +151,25 @@ function handleSendMessage(message: string) {
   background: none;
 }
 
-/* Styling for the text content within a message */
+/* Styling untuk konten teks di dalam pesan */
 .message-content {
   color: var(--ui-text);
-  word-wrap: break-word; /* Ensure long words don't overflow */
-  white-space: pre-wrap; /* Preserve whitespace and line breaks */
+  word-wrap: break-word; /* Pastikan kata-kata panjang tidak meluap */
+  white-space: pre-wrap; /* Pertahankan spasi putih dan baris baru */
   overflow-wrap: break-word;
 }
 
-/* ===== Input Form Styles ===== */
-/* Fixes the input form to the bottom of the viewport */
+/* ===== Gaya Formulir Input ===== */
+/* Memperbaiki formulir input ke bagian bawah viewport */
 .message-form-container {
   position: fixed;
   bottom: 1.5rem;
   max-width: 800px;
-  width: calc(100% - 3rem); /* Account for container padding */
-  z-index: 10; /* Ensure it stays on top of other content */
+  width: calc(100% - 3rem); /* Memperhitungkan padding container */
+  z-index: 10; /* Pastikan tetap di atas konten lain */
 }
 
-/* Container for the 'scroll to bottom' button (if implemented) */
+/* Container untuk tombol 'scroll ke bawah' (jika diimplementasikan) */
 .scroll-to-bottom-button-container {
   position: absolute;
   bottom: calc(100% + 1rem);
@@ -152,16 +177,16 @@ function handleSendMessage(message: string) {
   width: 100%;
   display: flex;
   justify-content: center;
-  pointer-events: none; /* Allow clicks to pass through the container itself */
+  pointer-events: none; /* Izinkan klik melewati container itu sendiri */
 }
 
-/* Re-enable pointer events for the button inside the container */
+/* Aktifkan kembali event pointer untuk tombol di dalam container */
 .scroll-to-bottom-button-container :deep(button) {
   pointer-events: auto;
 }
 
-/* ===== Empty State Styles ===== */
-/* Centers the empty state content vertically and horizontally */
+/* ===== Gaya Keadaan Kosong ===== */
+/* Memusatkan konten keadaan kosong secara vertikal dan horizontal */
 .empty-state {
   display: flex;
   align-items: center;
@@ -191,10 +216,10 @@ function handleSendMessage(message: string) {
   color: var(--ui-text-muted);
 }
 
-/* ===== Utility Styles ===== */
-/* Hide scrollbar across browsers for a cleaner look */
+/* ===== Gaya Utilitas ===== */
+/* Sembunyikan scrollbar di seluruh browser untuk tampilan yang lebih bersih */
 .message-input {
-  -ms-overflow-style: none; /* IE and Edge */
+  -ms-overflow-style: none; /* IE dan Edge */
   scrollbar-width: none; /* Firefox */
 }
 
