@@ -1,26 +1,34 @@
 <script setup lang="ts">
-// Impor composable useChat untuk mengakses state dan logika chat.
-// chat: Objek sesi chat saat ini (berisi judul, id, dll.).
-// messages: Array objek pesan (pengguna dan asisten).
-// sendMessage: Fungsi untuk mengirim pesan baru ke AI.
-const { chat, messages, sendMessage } = useChat();
+import type { ChatMessage, Chat } from "~/types";
 
-// Impor composable useChatScroll untuk menangani perilaku scrolling.
-// showScrollButton: Ref boolean untuk mengontrol visibilitas tombol "scroll ke bawah".
-// scrollToBottom: Fungsi untuk scroll halus ke bagian bawah chat.
-// pinToBottom: Fungsi untuk menjaga chat tetap di bawah saat pesan baru masuk.
+// Mendefinisikan props yang diterima oleh komponen ini.
+// chat: Objek chat yang berisi informasi sesi chat.
+// messages: Array pesan yang akan ditampilkan.
+const props = defineProps<{
+  chat: Chat;
+  messages: ChatMessage[];
+}>();
+
+// Mendefinisikan event yang dapat dipancarkan ke komponen induk.
+// 'send-message': Dipancarkan saat pengguna mengirim pesan baru.
+const emit = defineEmits(["send-message"]);
+
+// Menggunakan composable useChatScroll untuk menangani logika scrolling otomatis.
+// showScrollButton: Status untuk menampilkan tombol scroll ke bawah.
+// scrollToBottom: Fungsi untuk melakukan scroll ke posisi paling bawah.
+// pinToBottom: Fungsi untuk menjaga posisi scroll tetap di bawah saat ada pesan baru.
 const { showScrollButton, scrollToBottom, pinToBottom } = useChatScroll();
 
-// Fungsi handler untuk event 'send-message' dari komponen ChatInput.
-// Menerima string pesan dan memanggil fungsi composable sendMessage.
+// Fungsi handler untuk meneruskan pesan dari ChatInput ke komponen induk.
+// Saat ChatInput memancarkan 'send-message', fungsi ini akan memancarkan event yang sama ke atas.
 function handleSendMessage(message: string) {
-  sendMessage(message);
+  emit("send-message", message);
 }
 
-// Pantau perubahan pada array messages.
-// Saat pesan berubah (misalnya, pesan baru ditambahkan), panggil pinToBottom untuk memastikan
-// tampilan tetap pada pesan terbaru jika pengguna sudah berada di bawah.
-watch(() => messages.value, pinToBottom, { deep: true });
+// Memantau perubahan pada props.messages.
+// Setiap kali daftar pesan berubah (misalnya ada pesan baru), kita panggil pinToBottom
+// untuk memastikan tampilan chat otomatis scroll ke bawah jika pengguna sedang berada di bawah.
+watch(() => props.messages, pinToBottom, { deep: true });
 </script>
 
 <template>
